@@ -29,35 +29,42 @@ TEST(StringFunction, strcpy) {
 }
 
 TEST(StringFunction, strncpy) {
-    // n larger than src: whole string copied, terminated
+    // n larger than src: whole string copied, terminated, nothing after touched
     char a[20] = "XXXXXXXXXXXXXXXXXXX";
     EXPECT_EQ(String::strncpy(a, "foo", 10), a);
     EXPECT_STREQ(a, "foo");
+    EXPECT_EQ(a[4], 'X');               // no padding with '\0'
 
-    // n smaller than src: exactly n chars copied, nothing written after them
+    // n smaller than src: exactly n chars copied, THEN terminated
     char b[20] = "XXXXXXXXXXXXXXXXXXX";
     EXPECT_EQ(String::strncpy(b, "hello", 3), b);
-    EXPECT_EQ(b[0], 'h');
-    EXPECT_EQ(b[1], 'e');
-    EXPECT_EQ(b[2], 'l');
-    EXPECT_EQ(b[3], 'X');
+    EXPECT_STREQ(b, "hel");
+    EXPECT_EQ(b[3], '\0');
+    EXPECT_EQ(b[4], 'X');               // writes at most n + 1 chars
 
     // n equal to length of src
     char c[20] = "XXXXXXXXXXXXXXXXXXX";
     String::strncpy(c, "abc", 3);
-    EXPECT_EQ(c[0], 'a');
-    EXPECT_EQ(c[2], 'c');
-    EXPECT_EQ(c[3], 'X');
+    EXPECT_STREQ(c, "abc");
+    EXPECT_EQ(c[4], 'X');
 
-    // n == 0: nothing copied
+    // n == 0: empty string, only the terminator written
     char d[20] = "XXXXXXXXXXXXXXXXXXX";
     String::strncpy(d, "abc", 0);
-    EXPECT_EQ(d[0], 'X');
+    EXPECT_STREQ(d, "");
+    EXPECT_EQ(d[1], 'X');
 
     // empty src
     char e[20] = "XXXXXXXXXXXXXXXXXXX";
-    String::strncpy(e, "", 5);
+    EXPECT_EQ(String::strncpy(e, "", 5), e);
     EXPECT_STREQ(e, "");
+    EXPECT_EQ(e[1], 'X');               // no padding
+
+    // shorter after longer
+    char f[20];
+    String::strncpy(f, "abcdefgh", 19);
+    String::strncpy(f, "xy", 19);
+    EXPECT_STREQ(f, "xy");
 }
 
 TEST(StringFunction, strcat) {

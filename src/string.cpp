@@ -19,14 +19,13 @@ char *String::strcpy(char *dest, const char *src) {
     return dest;
 }
 
-// Standard C behaviour: copies at most n chars; if src is shorter than n,
-// pads the rest with '\0'; if src has n or more chars, NO terminator is added.
+// Homework version (NOT the C standard one): copies at most n chars,
+// then ALWAYS adds a terminator, so dest needs room for n + 1 chars.
 char *String::strncpy(char *dest, const char *src, int n) {
     int i = 0;
     for (; i < n && src[i] != '\0'; ++i)
         dest[i] = src[i];
-    for (; i < n; ++i)
-        dest[i] = '\0';
+    dest[i] = '\0';
     return dest;
 }
 
@@ -97,10 +96,8 @@ const char *String::strstr(const char *haystack, const char *needle) {
 // ===================== interface methods =====================
 
 String::String(const char *s) {
-    // truncate to MAXLEN - 1 chars, no message required;
-    // strncat (not strncpy) so we never write past the terminator
-    buf[0] = '\0';
-    strncat(buf, s, MAXLEN - 1);
+    // truncate to MAXLEN - 1 chars (room for '\0'), no message required
+    strncpy(buf, s, MAXLEN - 1);
 }
 
 String::String(const String &s) {
