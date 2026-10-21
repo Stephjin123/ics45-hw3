@@ -1,8 +1,11 @@
-#include "string.hpp"
 #include <iostream>
 #include <iomanip>
+#include "string.hpp"
+using namespace std;
 
 // ===================== static helper functions =====================
+// All loops through C strings live here; the interface methods below
+// only call these helpers. None of these check MAXLEN.
 
 int String::strlen(const char *s) {
     int len = 0;
@@ -15,7 +18,7 @@ char *String::strcpy(char *dest, const char *src) {
     int i = 0;
     for (; src[i] != '\0'; ++i)
         dest[i] = src[i];
-    dest[i] = '\0';                 // copy the terminator too
+    dest[i] = '\0';
     return dest;
 }
 
@@ -30,17 +33,13 @@ char *String::strncpy(char *dest, const char *src, int n) {
 }
 
 char *String::strcat(char *dest, const char *src) {
-    strcpy(dest + strlen(dest), src);   // start writing at dest's '\0'
+    strcpy(dest + strlen(dest), src);
     return dest;
 }
 
-// Appends at most n chars of src, then ALWAYS adds a terminator.
+// Appends at most n chars of src, then always adds a terminator.
 char *String::strncat(char *dest, const char *src, int n) {
-    int start = strlen(dest);
-    int i = 0;
-    for (; i < n && src[i] != '\0'; ++i)
-        dest[start + i] = src[i];
-    dest[start + i] = '\0';
+    strncpy(dest + strlen(dest), src, n);
     return dest;
 }
 
@@ -64,10 +63,10 @@ void String::reverse_cpy(char *dest, const char *src) {
     int len = strlen(src);
     for (int i = 0; i < len; ++i)
         dest[i] = src[len - 1 - i];
-    dest[len] = '\0';               // terminator stays at the END
+    dest[len] = '\0';
 }
 
-// Searching for '\0' returns a pointer to the terminator (standard behaviour).
+// Searching for '\0' returns a pointer to the terminator.
 const char *String::strchr(const char *str, char c) {
     for (int i = 0; ; ++i) {
         if (str[i] == c)
@@ -77,14 +76,14 @@ const char *String::strchr(const char *str, char c) {
     }
 }
 
-// Empty needle matches at the start of haystack (standard behaviour).
+// An empty needle matches at the start of haystack.
 const char *String::strstr(const char *haystack, const char *needle) {
     if (needle[0] == '\0')
         return haystack;
     for (int start = 0; haystack[start] != '\0'; ++start) {
         int i = 0;
-        // stops at end of needle, or at a mismatch; reaching haystack's
-        // '\0' is always a mismatch, so we never read past haystack
+        // reaching haystack's '\0' is always a mismatch,
+        // so we never read past the end of haystack
         while (needle[i] != '\0' && haystack[start + i] == needle[i])
             ++i;
         if (needle[i] == '\0')
@@ -95,6 +94,7 @@ const char *String::strstr(const char *haystack, const char *needle) {
 
 // ===================== interface methods =====================
 
+// the default argument "" appears only in the declaration
 String::String(const char *s) {
     // truncate to MAXLEN - 1 chars (room for '\0'), no message required
     strncpy(buf, s, MAXLEN - 1);
@@ -112,7 +112,7 @@ String &String::operator=(const String &s) {
 
 char &String::operator[](int index) {
     if (!in_bounds(index)) {
-        std::cout << "ERROR: Index Out Of Bounds" << std::endl;
+        cout << "ERROR: Index Out Of Bounds" << endl;
         return buf[0];
     }
     return buf[index];
@@ -147,7 +147,7 @@ bool String::operator>=(const String &s) const { return strcmp(buf, s.buf) >= 0;
 
 String String::operator+(const String &s) const {
     String result(*this);
-    result += s;                    // += prints the message if needed
+    result += s;            // += prints the capacity message if needed
     return result;
 }
 
@@ -156,35 +156,35 @@ String &String::operator+=(const String &s) {
     int slen = s.size();
     int room = MAXLEN - 1 - len;    // how many more chars fit
     int n = slen;
-    if (slen > room) {
-        std::cout << "ERROR: String Capacity Exceeded" << std::endl;
-        n = room;                   // truncate
+    if (slen > room) {              // exactly full is fine; one more is not
+        cout << "ERROR: String Capacity Exceeded" << endl;
+        n = room;                   // recover by truncating
     }
-    // n <= slen, so this also works for s += s (we never read
-    // the part of buf that strncat is overwriting)
+    // n <= slen, so s += s is safe: strncat never reads the part
+    // of buf it is overwriting
     strncat(buf, s.buf, n);
     return *this;
 }
 
-void String::print(std::ostream &out) const {
+void String::print(ostream &out) const {
     out << buf;
 }
 
-void String::read(std::istream &in) {
+void String::read(istream &in) {
     // setw stops >> from writing more than MAXLEN - 1 chars + '\0'
-    in >> std::setw(MAXLEN) >> buf;
+    in >> setw(MAXLEN) >> buf;
 }
 
 String::~String() {
     // nothing to do: buf is a member array, not allocated with new
 }
 
-std::ostream &operator<<(std::ostream &out, const String &s) {
+ostream &operator<<(ostream &out, const String &s) {
     s.print(out);
     return out;
 }
 
-std::istream &operator>>(std::istream &in, String &s) {
+istream &operator>>(istream &in, String &s) {
     s.read(in);
     return in;
 }
